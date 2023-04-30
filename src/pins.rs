@@ -8,12 +8,15 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
     Pins {
         // TODO: make configurable via text file
         pins: [
-            P8(pins.gpio8.into_pull_up_input()), // pos1
-            P10(pins.gpio10.into_pull_up_input()),
-            P12(pins.gpio12.into_pull_up_input()),
-            P9(pins.gpio9.into_pull_up_input()), // pos4
-            P11(pins.gpio11.into_pull_up_input()),
+            // row1
+            P3(pins.gpio3.into_pull_up_input()),
+            P9(pins.gpio9.into_pull_up_input()),
             P13(pins.gpio13.into_pull_up_input()),
+
+            // row2
+            P2(pins.gpio2.into_pull_up_input()),
+            P8(pins.gpio8.into_pull_up_input()),
+            P12(pins.gpio12.into_pull_up_input()),
         ],
     }
 }
