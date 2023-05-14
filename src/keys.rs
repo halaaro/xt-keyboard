@@ -4,12 +4,18 @@ use crate::pins::NKEY;
 
 pub const MAX_KEYCODES: usize = 10;
 pub const KEYMAP: [&[Keyboard]; NKEY] = [
-    &[Keyboard::LeftGUI, Keyboard::LeftShift, Keyboard::A], // powertoys mute
-    &[Keyboard::UpArrow],
-    &[Keyboard::PrintScreen],
-    &[Keyboard::LeftArrow],
-    &[Keyboard::DownArrow],
-    &[Keyboard::RightArrow],
+    // &[Keyboard::LeftGUI, Keyboard::LeftShift, Keyboard::A], // powertoys mute
+    // &[Keyboard::UpArrow],
+    // &[Keyboard::PrintScreen],
+    // &[Keyboard::LeftArrow],
+    // &[Keyboard::DownArrow],
+    // &[Keyboard::RightArrow],
+    &[Keyboard::Escape],
+    &[Keyboard::Q],
+    &[Keyboard::W],
+    &[Keyboard::E],
+    &[Keyboard::R],
+    &[Keyboard::T],
 ];
 
 pub fn mapkeys(keystates: [bool; NKEY]) -> [Keyboard; MAX_KEYCODES] {
