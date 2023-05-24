@@ -1,31 +1,49 @@
 use embedded_hal::digital::v2::InputPin;
-use rp_pico::hal::gpio::{bank0::*, Pin as GpioPin, PullUpInput};
-use rp_pico::Pins as GpioPins;
+use hal::gpio::FunctionI2C;
+use rp_pico::hal::gpio::{
+    bank0::*, AnyPin, Disabled, Function, Pin as GpioPin, PullDown, PullUpInput,
+};
+use rp_pico::hal::i2c::{SclPin, SdaPin};
+use rp_pico::pac::I2C1;
+use rp_pico::{hal, Pins as GpioPins, GP26_I2_C1_SDA_MODE};
 
 pub const NKEY: usize = 6;
 
-pub(crate) fn setup(pins: GpioPins) -> Pins {
-    Pins {
+pub(crate) fn setup(pins: GpioPins) -> (DisplayPins, KeyPins) {
+    let key_pins = KeyPins {
         // TODO: make configurable via text file
         pins: [
             // row1
             P3(pins.gpio3.into_pull_up_input()),
             P9(pins.gpio9.into_pull_up_input()),
             P13(pins.gpio13.into_pull_up_input()),
-
             // row2
             P2(pins.gpio2.into_pull_up_input()),
             P8(pins.gpio8.into_pull_up_input()),
             P12(pins.gpio12.into_pull_up_input()),
         ],
-    }
+    };
+
+    let display_pins = DisplayPins(
+        pins.gpio26.into_mode::<hal::gpio::FunctionI2C>(),
+        pins.gpio27.into_mode::<hal::gpio::FunctionI2C>(),
+    );
+    (display_pins, key_pins)
 }
 
-pub struct Pins {
+pub struct KeyPins {
     pins: [PullUpPin; NKEY],
 }
 
-impl Pins {
+pub struct DisplayPins(GpioPin<Gpio26, FunctionI2C>, GpioPin<Gpio27, FunctionI2C>);
+
+impl DisplayPins {
+    pub fn split(self) -> (GpioPin<Gpio26, FunctionI2C>, GpioPin<Gpio27, FunctionI2C>) {
+        (self.0, self.1)
+    }
+}
+
+impl KeyPins {
     pub fn poll(&self) -> [bool; NKEY] {
         // TODO: implement debounce
         let mut keystates = [false; NKEY];
@@ -65,6 +83,7 @@ enum PullUpPin {
     P27(GpioPin<Gpio27, PullUpInput>),
     P28(GpioPin<Gpio28, PullUpInput>),
 }
+use ssd1306::prelude::I2CInterface;
 use PullUpPin::*;
 
 impl PullUpPin {
