@@ -12,14 +12,27 @@
 #![no_std]
 #![no_main]
 
+mod bytestring;
 mod display;
+mod icons;
 mod keys;
 mod pins;
 
+use core::{fmt::Write, ops::Deref};
+
 use bsp::{hal::Clock, pac};
 use defmt::info;
-use display::DrawIcon;
-use embedded_graphics::{text::{Text, Baseline}, prelude::Point, mono_font::{MonoTextStyleBuilder, ascii::FONT_9X15}, pixelcolor::BinaryColor, Drawable};
+use display::{DrawIcon, DrawTextParts};
+use embedded_graphics::{
+    mono_font::{
+        ascii::{FONT_5X8, FONT_7X13, FONT_9X15},
+        MonoTextStyleBuilder,
+    },
+    pixelcolor::BinaryColor,
+    prelude::Point,
+    text::{Baseline, Text},
+    Drawable,
+};
 use hid::page::Keyboard;
 use rp_pico::{self as bsp, entry, hal};
 
@@ -30,6 +43,16 @@ use usbd_human_interface_device::{self as hid, prelude::*};
 
 // Time handling traits:
 use fugit::{ExtU32, RateExtU32};
+
+macro_rules! format {
+    ($($arg: tt)*) => {
+        {
+            let mut text_buffer = bytestring::ByteStringWriter::default();
+            write!(text_buffer, $($arg)*);
+            text_buffer
+        }
+    };
+}
 
 #[entry]
 fn main() -> ! {
@@ -77,7 +100,7 @@ fn main() -> ! {
         pac.I2C1,
         sda,
         scl,
-        400.kHz(),
+        1000.kHz(),
         &mut pac.RESETS,
         &clocks.peripheral_clock,
     );
@@ -85,7 +108,7 @@ fn main() -> ! {
     let core = pac::CorePeripherals::take().unwrap();
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
-    delay.delay_ms(100); // wait for display to start
+    delay.delay_ms(10); // wait for display to start
     let mut disp = display::setup(i2c);
 
     let mut keyboard = UsbHidClassBuilder::new()
@@ -102,87 +125,63 @@ fn main() -> ! {
     let mut iconx = 0;
     let mut icony = 0;
 
-
-    let istr = "0123456789";
-
     let text_style = MonoTextStyleBuilder::new()
-        .font(&FONT_9X15)
+        .font(&FONT_7X13)
         .text_color(BinaryColor::On)
         .build();
 
     let mut cnt = 0;
+    let mut icon_idx = 0;
+    let mut icon_scale = 1;
     loop {
         cnt += 1;
         // TODO: replace with proper delay
         delay.delay_ms(10);
 
-        // TODO: only call once sufficient time has passed
-        iconx = (iconx + 1) % (128 + 16);
-        icony = if iconx == 0 { (icony + 10) % 64 } else { icony };
-        disp.clear();
+        if cnt % 12 == 0 {
+            iconx = (iconx + 1) % (128 + 16);
+            if iconx == 0 {
+                icon_idx = (icon_idx + 1) % icons::ICONS.len();
+            }
 
-        let ix = iconx - 16;
-        let iy = icony;
-        disp.draw_icon(ix, icony);
+            if cnt % 50 == 0 {
+                icon_scale = (icon_scale % 2) + 1;
+            }
 
+            disp.clear();
 
-    let ix_ones = (ix % 10).unsigned_abs() as usize;
-    let ix_tens = ((ix / 10) % 10).unsigned_abs() as usize;
-    let ix_hund = ((ix / 100) % 10).unsigned_abs() as usize;
+            let ix = iconx - 16;
+            let iy = icony + 16;
+            disp.draw_icon_with_scale(icons::ICONS[icon_idx], ix, iy, icon_scale);
+            Text::with_baseline(
+                &format!("author: {}", icons::ICONS[icon_idx].author),
+                Point::new(0, 35),
+                text_style,
+                Baseline::Top,
+            )
+            .draw(&mut disp)
+            .unwrap();
 
-        // disp.draw_text(["x: ", if ix < 0 { "-" } else { " "},
-// &istr[ix_hund..ix_hund+1],
-// &istr[ix_tens..ix_tens+1],
-// &istr[ix_ones..ix_ones+1],
-        // ], Point::new(0,0), text_style, Baseline::Top);
+            Text::with_baseline(
+                &format!("name: {}", icons::ICONS[icon_idx].name),
+                Point::new(0, 50),
+                text_style,
+                Baseline::Top,
+            )
+            .draw(&mut disp)
+            .unwrap();
 
-    Text::with_baseline("x: ", Point::new(0, 0), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-    Text::with_baseline(if ix < 0 { "-" } else { " "}, Point::new(40, 0), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-    Text::with_baseline(&istr[ix_ones..ix_ones+1], Point::new(70, 0), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
+            Text::with_baseline(
+                &format!("[{}/{}] {icon_scale}00%", icon_idx + 1, icons::ICONS.len()),
+                Point::new(0, 0),
+                text_style,
+                Baseline::Top,
+            )
+            .draw(&mut disp)
+            .unwrap();
 
-    Text::with_baseline(&istr[ix_tens..ix_tens+1], Point::new(60, 0), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-
-    Text::with_baseline(&istr[ix_hund..ix_hund+1], Point::new(50, 0), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-
-    let iy_ones = (iy % 10).unsigned_abs() as usize;
-    let iy_tens = ((iy / 10) % 10).unsigned_abs() as usize;
-    let iy_hund = ((iy / 100) % 10).unsigned_abs() as usize;
-
-        // disp.draw_text(["x: ", if iy < 0 { "-" } else { " "},
-// &istr[iy_hund..iy_hund+1],
-// &istr[iy_tens..iy_tens+1],
-// &istr[iy_ones..iy_ones+1],
-        // ], Point::new(0,0), text_style, Baseline::Top);
-
-    Text::with_baseline("y: ", Point::new(0, 16), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-    Text::with_baseline(if iy < 0 { "-" } else { " "}, Point::new(40, 16), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-    Text::with_baseline(&istr[iy_ones..iy_ones+1], Point::new(70, 16), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-
-    Text::with_baseline(&istr[iy_tens..iy_tens+1], Point::new(60, 16), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-
-    Text::with_baseline(&istr[iy_hund..iy_hund+1], Point::new(50, 16), text_style, Baseline::Top)
-        .draw(&mut disp)
-        .unwrap();
-
-        disp.flush();
+            disp.flush();
+        }
 
         let keystates = key_pins.poll();
         let keycodes = keys::mapkeys(keystates);
