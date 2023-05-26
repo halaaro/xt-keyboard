@@ -22,13 +22,14 @@ pub const CROSS: Icon = Icon {
 
 pub const SM_HEART: Icon = Icon {
     name: "small heart",
-    author: "aaron",
+    author: "aaron + emma",
     pixels: &[
-        " XXX   XXX ",
-        "XXXXX XXXXX",
-        " XXXXXXXXX ",
-        "   XXXXX   ",
-        "     X     ",
+        "  XXX   XXX  ",
+        " XXXXX XXXXX ",
+        "  XXXXXXXXX  ",
+        "   xXXXXXx   ",
+        "     Xxx     ",
+        "      x      ",
     ],
 };
 
