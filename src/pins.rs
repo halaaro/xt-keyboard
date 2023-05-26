@@ -2,22 +2,11 @@ use embedded_hal::digital::v2::InputPin;
 use rp_pico::hal::gpio::{bank0::*, Pin as GpioPin, PullUpInput};
 use rp_pico::Pins as GpioPins;
 
-pub const NKEY: usize = 6;
+pub const NKEY: usize = 21;
 
 pub(crate) fn setup(pins: GpioPins) -> Pins {
     Pins {
-        // TODO: make configurable via text file
         pins: [
-            // row1
-            // P3(pins.gpio3.into_pull_up_input()),
-            // P9(pins.gpio9.into_pull_up_input()),
-            // P13(pins.gpio13.into_pull_up_input()),
-
-            // row2
-            // P2(pins.gpio2.into_pull_up_input()),
-            // P8(pins.gpio8.into_pull_up_input()),
-            // P12(pins.gpio12.into_pull_up_input()),
-
             // top row
             P0(pins.gpio0.into_pull_up_input()),
             P1(pins.gpio1.into_pull_up_input()),
@@ -25,6 +14,27 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
             P3(pins.gpio3.into_pull_up_input()),
             P4(pins.gpio4.into_pull_up_input()),
             P5(pins.gpio5.into_pull_up_input()),
+
+            // middle row
+            P6(pins.gpio6.into_pull_up_input()),
+            P7(pins.gpio7.into_pull_up_input()),
+            P8(pins.gpio8.into_pull_up_input()),
+            P9(pins.gpio9.into_pull_up_input()),
+            P10(pins.gpio10.into_pull_up_input()),
+            P11(pins.gpio11.into_pull_up_input()),
+
+            // bottom row
+            P12(pins.gpio12.into_pull_up_input()),
+            P13(pins.gpio13.into_pull_up_input()),
+            P14(pins.gpio14.into_pull_up_input()),
+            P15(pins.gpio15.into_pull_up_input()),
+            P16(pins.gpio16.into_pull_up_input()),
+            P17(pins.gpio17.into_pull_up_input()),
+
+            // thumb cluster
+            P18(pins.gpio18.into_pull_up_input()),
+            P19(pins.gpio19.into_pull_up_input()),
+            P22(pins.gpio22.into_pull_up_input()),
         ],
     }
 }
