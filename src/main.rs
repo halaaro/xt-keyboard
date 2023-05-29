@@ -81,12 +81,13 @@ fn main() -> ! {
     let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
 
     let mut old_keycodes = [Keyboard::NoEventIndicated; keys::MAX_KEYCODES];
+    let mut keymap = keys::KeyMap::new();
     loop {
         // TODO: replace with proper delay
         delay.delay_ms(10);
 
         let keystates = pins.poll();
-        let keycodes = keys::mapkeys(keystates);
+        let keycodes = keymap.mapkeys(keystates);
         if old_keycodes != keycodes {
             info!("new keycodes: {}", keycodes.map(|k| k as u8));
             old_keycodes = keycodes;
