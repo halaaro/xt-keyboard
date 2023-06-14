@@ -6,21 +6,28 @@ use Keyboard::NoEventIndicated as NEI;
 use Keyboard::*;
 
 type Layer = [&'static [Keyboard]; NKEY];
-const MAX_TAP_COUNT : usize = 10;
+const MAX_TAP_COUNT : usize = 15;
 pub const MAX_KEYCODES: usize = 10;
 
 pub const LAYER1: Layer = [
     &[Tab], &[Q], &[W], &[E], &[R], &[T],
     &[Escape], &[A], &[S], &[D], &[F], &[G],
     &[LeftShift], &[Z], &[X], &[C], &[V], &[B],
-    &[LeftControl], &[LeftAlt], &[Space],
+    &[LeftGUI], &[LeftAlt], &[LeftControl],
 ];
 
 pub const LAYER2: Layer = [
     &[Grave], &[Keyboard1], &[Keyboard2], &[Keyboard3], &[Keyboard4], &[Keyboard5],
+    &[Escape], &[LeftShift, Keyboard1], &[LeftShift, Keyboard2], &[LeftShift, Keyboard3], &[LeftShift, Keyboard4], &[LeftShift, Keyboard5],
+    &[LeftShift], &[], &[], &[], &[], &[],
+    &[LeftGUI], &[LeftAlt], &[LeftControl],
+];
+
+pub const LAYER3: Layer = [
+    &[F1], &[F2], &[F3], &[F4], &[F4], &[F5],
     &[Escape], &[], &[], &[], &[], &[],
     &[LeftShift], &[], &[], &[], &[], &[],
-    &[LeftControl], &[LeftAlt], &[Space],
+    &[LeftGUI], &[LeftAlt], &[LeftControl],
 ];
 
 pub struct KeyMap {
@@ -80,11 +87,15 @@ impl KeyMap {
             if let (Some(tapkey), 0, 0..=MAX_TAP_COUNT) = (self.tapstart, key_count, self.tap_count)
             {
                 match (self.active_layer, tapkey) {
-                    (&LAYER1, LeftControl) => {
+                    (&LAYER1, LeftAlt) => {
                         self.active_layer = &LAYER2;
                         info!("SWITCH -> layer 2");
                     }
                     (&LAYER2, LeftAlt) => {
+                        self.active_layer = &LAYER3;
+                        info!("SWITCH -> layer 3");
+                    }
+                    (active, LeftControl) if active != &LAYER1  => {
                         self.active_layer = &LAYER1;
                         info!("SWITCH -> layer 1");
                     }
