@@ -72,9 +72,9 @@ fn main() -> ! {
         .build(&usb_bus);
 
     let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x1209, 0x0001))
-        .manufacturer("Crusty Keebs")
-        .product("TX Keeb")
-        .serial_number("TEST")
+        .manufacturer("Aaron's Crusty Keebs")
+        .product("TX42 Keeb")
+        .serial_number("0101010")
         .build();
 
     let core = pac::CorePeripherals::take().unwrap();
