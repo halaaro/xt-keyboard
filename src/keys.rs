@@ -6,7 +6,7 @@ use Keyboard::NoEventIndicated as NEI;
 use Keyboard::*;
 
 type Layer = [&'static [Keyboard]; NKEY];
-const MAX_TAP_COUNT : usize = 15;
+const MAX_TAP_COUNT: usize = 15;
 pub const MAX_KEYCODES: usize = 10;
 
 pub const LAYER1: Layer = [
@@ -95,7 +95,7 @@ impl KeyMap {
                         self.active_layer = &LAYER3;
                         info!("SWITCH -> layer 3");
                     }
-                    (active, LeftControl) if active != &LAYER1  => {
+                    (active, LeftControl) if active != &LAYER1 => {
                         self.active_layer = &LAYER1;
                         info!("SWITCH -> layer 1");
                     }
@@ -110,6 +110,11 @@ impl KeyMap {
         }
 
         self.old_keys = keys;
+
+        if let Some(LeftAlt) = self.tapstart {
+            keys[0] = NEI; // ignore quick alt taps
+        }
+
         keys
     }
 }
