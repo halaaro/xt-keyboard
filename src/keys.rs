@@ -23,9 +23,9 @@ pub const LAYER2: Layer = [
 
 pub const LAYER3: Layer = [
     &[F1], &[F2], &[F3], &[F4], &[F4], &[F5],
-    &[Escape], &[], &[], &[], &[], &[],
-    &[LShift], &[], &[], &[], &[], &[],
-    &[LGui], &[LAlt], &[LCtrl],
+    &[Escape], &[Q], &[W], &[E], &[R], &[T],
+    &[LShift], &[A], &[S], &[D], &[F], &[G],
+    &[Space], &[LAlt], &[LCtrl],
 ];
 
 pub struct KeyMap {
