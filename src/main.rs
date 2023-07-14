@@ -1,40 +1,27 @@
-//! board, with the USB driver running in the main thread.
-//!
-//! It generates movement reports which will twitch the cursor up and down by a
-//! few pixels, several times a second.
-//!
-//! See the `Cargo.toml` file for Copyright and license details.
-//!
-//! This is a port of
-//! https://github.com/atsamd-rs/atsamd/blob/master/boards/itsybitsy_m0/examples/twitching_usb_mouse.rs
-
 #![no_std]
 #![no_main]
 
 mod keys;
 mod pins;
 
-use bsp::{hal::Clock, pac};
-use defmt::info;
-use hid::page::Keyboard;
-use rp_pico::{self as bsp, entry, hal};
+use defmt::{info, debug};
+use keyberon::key_code::KbHidReport;
+use rp_pico::{self as bsp, entry, hal, hal::Clock};
+use usb_device::{
+    bus::UsbBusAllocator,
+    class_prelude::UsbClass,
+    prelude::{UsbDeviceBuilder, UsbDeviceState::Configured, UsbVidPid},
+};
 
 use defmt_rtt as _;
 use panic_probe as _;
-use usb_device::{bus::UsbBusAllocator, prelude::*};
-use usbd_human_interface_device::{self as hid, prelude::*};
 
 #[entry]
 fn main() -> ! {
-    // Grab our singleton objects
-    let mut pac = pac::Peripherals::take().unwrap();
+    let mut pac = bsp::pac::Peripherals::take().unwrap();
 
-    // Set up the watchdog driver - needed by the clock setup code
     let mut watchdog = hal::Watchdog::new(pac.WATCHDOG);
 
-    // Configure the clocks
-    //
-    // The default is to generate a 125 MHz system clock
     let clocks = hal::clocks::init_clocks_and_plls(
         bsp::XOSC_CRYSTAL_FREQ,
         pac.XOSC,
@@ -55,7 +42,6 @@ fn main() -> ! {
         &mut pac.RESETS,
     );
 
-    // Set up the USB driver
     let usb_bus = UsbBusAllocator::new(hal::usb::UsbBus::new(
         pac.USBCTRL_REGS,
         pac.USBCTRL_DPRAM,
@@ -64,12 +50,14 @@ fn main() -> ! {
         &mut pac.RESETS,
     ));
 
-    // let pins = pins::setup(pico_pins);
-    let pins = pins::setup(pico_pins);
+    let mut pins = pins::setup(pico_pins);
 
-    let mut keyboard = UsbHidClassBuilder::new()
-        .add_device(hid::device::keyboard::NKROBootKeyboardConfig::default())
-        .build(&usb_bus);
+    let mut delay = {
+        let core = bsp::pac::CorePeripherals::take().unwrap();
+        cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz())
+    };
+
+    let mut usb_class = keyberon::new_class(&usb_bus, ());
 
     let mut usb_dev = UsbDeviceBuilder::new(&usb_bus, UsbVidPid(0x1209, 0x0001))
         .manufacturer("Aaron's Crusty Keebs")
@@ -77,48 +65,38 @@ fn main() -> ! {
         .serial_number("0101010")
         .build();
 
-    let core = pac::CorePeripherals::take().unwrap();
-    let mut delay = cortex_m::delay::Delay::new(core.SYST, clocks.system_clock.freq().to_Hz());
-
-    let mut old_keycodes = [Keyboard::NoEventIndicated; keys::MAX_KEYCODES];
     let mut keymap = keys::KeyMap::new();
+    let mut count = 0;
+    let mut configured = false;
+
     loop {
-        // TODO: replace with proper delay
-        delay.delay_ms(10);
+        delay.delay_ms(1);
 
-        let keystates = pins.poll();
-        let keycodes = keymap.mapkeys(keystates);
-        if old_keycodes != keycodes {
-            info!("new keycodes: {}", keycodes.map(|k| k as u8));
-            old_keycodes = keycodes;
+        if usb_dev.poll(&mut [&mut usb_class]) {
+            usb_class.poll();
+        }
+        if usb_dev.state() != Configured {
+            continue;
+        }
+        if !configured {
+            configured = true;
+            info!("usb device configured");
         }
 
-        match keyboard.device().write_report(keycodes) {
-            Err(UsbHidError::WouldBlock) => {}
-            Err(UsbHidError::Duplicate) => {}
-            Ok(_) => {}
-            Err(e) => {
-                core::panic!("Failed to write keyboard report: {:?}", e)
+        // scan every 10ms
+        count = (count + 1) % 10;
+        if count == 0 {
+            let keystates = pins.poll();
+            let keycodes = keymap.mapkeys(keystates);
+            let report: KbHidReport = keycodes.into_iter().collect();
+            if usb_class.device_mut().set_keyboard_report(report.clone()) {
+                debug!("new keycodes: {}", keycodes.map(|k| k as u8));
+                while let Ok(0) = usb_class.write(report.as_bytes()) {}
             }
-        }
-
-        match keyboard.tick() {
-            Err(UsbHidError::WouldBlock) => {}
-            Ok(_) => {}
-            Err(e) => {
-                core::panic!("Failed to process keyboard tick: {:?}", e)
-            }
-        };
-
-        if usb_dev.poll(&mut [&mut keyboard]) {
-            match keyboard.device().read_report() {
-                Err(UsbError::WouldBlock) => {
-                    //do nothing
-                }
-                Err(e) => {
-                    core::panic!("Failed to read keyboard report: {:?}", e)
-                }
-                Ok(_leds) => {}
+            if keycodes[0] as u8 != 0 {
+                pins.led(true);
+            } else {
+                pins.led(false);
             }
         }
     }

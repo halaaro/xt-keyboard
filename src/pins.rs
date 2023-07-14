@@ -1,11 +1,12 @@
-use embedded_hal::digital::v2::InputPin;
-use rp_pico::hal::gpio::{bank0::*, Pin as GpioPin, PullUpInput};
+use embedded_hal::digital::v2::{InputPin, OutputPin, PinState};
+use rp_pico::hal::gpio::{bank0::*, Output, Pin as GpioPin, PullUpInput, PushPull};
 use rp_pico::Pins as GpioPins;
 
 pub const NKEY: usize = 21;
 
 pub(crate) fn setup(pins: GpioPins) -> Pins {
     Pins {
+        led: pins.led.into_push_pull_output(),
         pins: [
             // top row
             P0(pins.gpio0.into_pull_up_input()),
@@ -14,7 +15,6 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
             P3(pins.gpio3.into_pull_up_input()),
             P4(pins.gpio4.into_pull_up_input()),
             P5(pins.gpio5.into_pull_up_input()),
-
             // middle row
             P6(pins.gpio6.into_pull_up_input()),
             P7(pins.gpio7.into_pull_up_input()),
@@ -22,7 +22,6 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
             P9(pins.gpio9.into_pull_up_input()),
             P10(pins.gpio10.into_pull_up_input()),
             P11(pins.gpio11.into_pull_up_input()),
-
             // bottom row
             P12(pins.gpio12.into_pull_up_input()),
             P13(pins.gpio13.into_pull_up_input()),
@@ -30,7 +29,6 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
             P15(pins.gpio15.into_pull_up_input()),
             P16(pins.gpio16.into_pull_up_input()),
             P17(pins.gpio17.into_pull_up_input()),
-
             // thumb cluster
             P18(pins.gpio18.into_pull_up_input()),
             P19(pins.gpio19.into_pull_up_input()),
@@ -41,16 +39,22 @@ pub(crate) fn setup(pins: GpioPins) -> Pins {
 
 pub struct Pins {
     pins: [PullUpPin; NKEY],
+    led: GpioPin<Gpio25, Output<PushPull>>,
 }
 
 impl Pins {
     pub fn poll(&self) -> [bool; NKEY] {
-        // TODO: implement debounce
         let mut keystates = [false; NKEY];
         for (i, v) in self.pins.iter().map(|p| p.is_low()).enumerate() {
             keystates[i] = v;
         }
         keystates
+    }
+
+    pub fn led(&mut self, on: bool) {
+        let _ = self
+            .led
+            .set_state(if on { PinState::High } else { PinState::Low });
     }
 }
 

@@ -20,7 +20,7 @@ rp-pico = "0.7"
 critical-section = "1.1.1"
 usb-device = { version = "0.2.9", features = ["defmt"] }
 panic-halt = "0.2.0"
-keyberon = "0.1.1"
+keyberon = { git = "https://github.com/TeXitoi/keyberon", branch = "master", version = "0.2.0" }
 usbd-human-interface-device = { version = "0.4.1", features = ["defmt"] }
 
 # but you can use any BSP. Uncomment this to use the pro_micro_rp2040 BSP instead
