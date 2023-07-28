@@ -11,7 +11,7 @@ pub const LAYER1: Layer = [
     &[Tab], &[Q], &[W], &[E], &[R], &[T],
     &[Escape], &[A], &[S], &[D], &[F], &[G],
     &[LShift], &[Z], &[X], &[C], &[V], &[B],
-    &[LGui], &[LAlt], &[LCtrl],
+    &[Space], &[LAlt], &[LCtrl],
 ];
 
 pub const LAYER2: Layer = [
