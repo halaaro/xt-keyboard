@@ -7,6 +7,7 @@ type Layer = [&'static [KeyCode]; NKEY];
 const MAX_TAP_COUNT: usize = 15;
 pub const MAX_KEYCODES: usize = 10;
 
+#[rustfmt::skip]
 pub const LAYER1: Layer = [
     &[Tab], &[Q], &[W], &[E], &[R], &[T],
     &[Escape], &[A], &[S], &[D], &[F], &[G],
@@ -14,6 +15,7 @@ pub const LAYER1: Layer = [
     &[Space], &[LAlt], &[LCtrl],
 ];
 
+#[rustfmt::skip]
 pub const LAYER2: Layer = [
     &[Grave], &[Kb1], &[Kb2], &[Kb3], &[Kb4], &[Kb5],
     &[Escape], &[LShift, Kb1], &[LShift, Kb2], &[LShift, Kb3], &[LShift, Kb4], &[LShift, Kb5],
@@ -21,6 +23,7 @@ pub const LAYER2: Layer = [
     &[LGui], &[LAlt], &[LCtrl],
 ];
 
+#[rustfmt::skip]
 pub const LAYER3: Layer = [
     &[F1], &[F2], &[F3], &[F4], &[F4], &[F5],
     &[Escape], &[Q], &[W], &[E], &[R], &[T],
