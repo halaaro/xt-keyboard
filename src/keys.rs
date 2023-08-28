@@ -1,5 +1,5 @@
 use defmt::{dbg, debug, info};
-use keyberon::key_code::KeyCode::{*, self};
+use keyberon::key_code::KeyCode::{self, *};
 
 use crate::pins::NKEY;
 
